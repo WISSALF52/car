@@ -1,0 +1,48 @@
+@@ -0,0 +1,47 @@
+pipeline {
+    agent any  // Utilise n'importe quel agent disponible
+
+    environment {
+        SONARQUBE_SERVER = 'SonarQube'  // Nom du serveur SonarQube configuré dans Jenkins
+        SONAR_TOKEN = credentials('sonar-token')  // Jeton SonarQube stocké dans Jenkins
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/ton-utilisateur/ton-repo.git'  // Remplace avec l'URL de ton dépôt
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'npm install'  // Remplace par la commande de build adaptée (mvn, gradle, etc.)
+            }
+        }
+
+        stage('Tests') {
+            steps {
+                sh 'npm test'  // Remplace par la commande de test adaptée (pytest, JUnit, etc.)
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv(SONARQUBE_SERVER) {
+                    sh 'sonar-scanner -Dsonar.login=$SONAR_TOKEN'
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    def qg = waitForQualityGate()
+                    if (qg.status != 'OK') {
+                        error "Échec de la Quality Gate : ${qg.status}"
+                    }
+                }
+            }
+        }
+    }
+}
